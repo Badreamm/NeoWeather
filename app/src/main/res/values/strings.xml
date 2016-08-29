@@ -5,4 +5,10 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">Settings</string>
+    <string name="add_city">添加城市</string>
+    <string name="plz_add_city">请添加城市</string>
+    <string name="about">关于</string>
+    <string name="setting">设置</string>
+    <string name="open">Open</string>
+    <string name="close">Close</string>
 </resources>
