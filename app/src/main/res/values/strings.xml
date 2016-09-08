@@ -11,4 +11,10 @@
     <string name="setting">设置</string>
     <string name="open">Open</string>
     <string name="close">Close</string>
+    <string name="net_error">网络错误</string>
+    <string name="location_error">无法定位,请检查设置</string>
+    <string name="city_manager">城市管理</string>
+    <string name="input_city_name">请输入城市名称或拼音</string>
+    <string name="no_matched_city">没有符合条件的城市</string>
+
 </resources>

@@ -245,4 +245,20 @@ public class StringUtils {
 		return str;
 	}
 
+	//获取地理位置url
+	public static String getLocationUrl(double latitude,double longitude){
+		return "http://api.map.baidu.com/geocoder/v2/?ak=5qnVTG8AIE9m9m1RfIOz1ovyD0ggun5G" +
+				"&mcode=B2:6C:6D:A0:AF:22:51:A4:FE:25:75:70:BB:08:80:3D:72:A9:65:F3;com.hzh.neoweather" +
+				"&location=" +latitude+","+longitude+
+				"&output=json&pois=0";
+	}
+
+	//获取天气信息url
+	public static String getWeatherUrl(String cityName){
+		String name = cutCityWord(cityName);
+		return "https://api.heweather.com/x3/weather?city="+name+
+				"&key=aade6c300897492eb36c319cac413cd7";
+	}
+
+
 }

@@ -19,7 +19,7 @@ public class WeatherInfo {
     private String qlty;//空气质量类别
     private String pm25;//PM2.5 1小时平均值(ug/m³)
     private String pm10;
-    private Date updateTime;//数据更新时间
+    private String updateTime;//数据更新时间
     private List<DailyForecast> dailyForecasts;
     private List<HourlyForecast> hourlyForecasts;
     private NowForecast nowForecast;
@@ -54,8 +54,7 @@ public class WeatherInfo {
                     w.setCityId(basic.getString("id"));
                 }
                 if(basic.has("update")){
-                    w.setUpdateTime(StringUtils.toDate
-                            (basic.getJSONObject("update").getString("utc")));
+                    w.setUpdateTime(basic.getJSONObject("update").getString("utc"));
                 }
             }
             if(jo.has("daily_forecast")){
@@ -111,11 +110,11 @@ public class WeatherInfo {
         this.pm10 = pm10;
     }
 
-    public Date getUpdateTime() {
+    public String getUpdateTime() {
         return updateTime;
     }
 
-    public void setUpdateTime(Date updateTime) {
+    public void setUpdateTime(String updateTime) {
         this.updateTime = updateTime;
     }
 

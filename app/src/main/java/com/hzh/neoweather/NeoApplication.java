@@ -6,22 +6,28 @@ import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import com.hzh.neoweather.model.WeatherInfo;
 import com.hzh.neoweather.util.StringUtils;
 
-/**
- * Created by hzh49 on 2016/8/10.
- */
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class NeoApplication extends Application {
     public static final int NETTYPE_WIFI = 0x01;
     public static final int NETTYPE_CMWAP = 0x02;
     public static final int NETTYPE_CMNET = 0x03;
+    public static NeoApplication instance;
 
-    public static Context context;
+    private Map<String,WeatherInfo> weatherInfos = new HashMap();
+    private List<String> myCities = new ArrayList<>();
+    private List<WeatherInfo> addWeatherInfos = new ArrayList<>();
 
     @Override
     public void onCreate() {
         super.onCreate();
-        context = getApplicationContext();
+        instance =this;
     }
 
 
@@ -72,6 +78,27 @@ public class NeoApplication extends Application {
         return netType;
     }
 
+    public Map<String, WeatherInfo> getWeatherInfos() {
+        return weatherInfos;
+    }
 
+    public void setWeatherInfos(Map<String, WeatherInfo> weatherInfos) {
+        this.weatherInfos = weatherInfos;
+    }
 
+    public List<String> getMyCities() {
+        return myCities;
+    }
+
+    public void setMyCities(List<String> myCities) {
+        this.myCities = myCities;
+    }
+
+    public List<WeatherInfo> getAddWeatherInfos() {
+        return addWeatherInfos;
+    }
+
+    public void setAddWeatherInfos(List<WeatherInfo> addWeatherInfos) {
+        this.addWeatherInfos = addWeatherInfos;
+    }
 }

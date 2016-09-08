@@ -45,12 +45,12 @@ public class LocationUtil {
         String provider;
         //获取所有可用的位置提供器
         List<String> providerLists = locationManager.getProviders(true);
-        if(providerLists.contains(LocationManager.GPS_PROVIDER)){
-            provider = LocationManager.GPS_PROVIDER;
-        }else if(providerLists.contains(LocationManager.NETWORK_PROVIDER)){
+
+        if(providerLists.contains(LocationManager.NETWORK_PROVIDER)){
             provider = LocationManager.NETWORK_PROVIDER;
-        }else{
-            Toast.makeText(context,"没有可用的位置提供器",Toast.LENGTH_SHORT).show();
+        } else if(providerLists.contains(LocationManager.GPS_PROVIDER)){
+            provider = LocationManager.GPS_PROVIDER;
+        } else{
             return null;
         }
         location = locationManager.getLastKnownLocation(provider);
