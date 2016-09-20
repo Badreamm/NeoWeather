@@ -10,7 +10,7 @@
     <application
         android:name="com.hzh.neoweather.NeoApplication"
         android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/preview_icon"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">

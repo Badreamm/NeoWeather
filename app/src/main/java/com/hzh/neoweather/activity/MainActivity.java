@@ -7,7 +7,6 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
-import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.view.ViewPager;
@@ -35,12 +34,12 @@ import com.hzh.neoweather.util.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -49,10 +48,11 @@ import java.util.Map;
  *
  */
 public class MainActivity extends BaseActivity implements NavigationView.OnNavigationItemSelectedListener{
+    public final static String CITIES_FLAG = "cities_flag";
+    public final static String WEATHER_FLAG = "weather_flag";
     public static final int RequestCode = 1;
     public static final String TAG = "MainActivity";
     private String localCity = "";//地理位置定位的城市
-    private String currentCity;//当前城市
     private List<String> myCities;//所有的城市
     private Toolbar toolbar;
     private ActionBarDrawerToggle mActionBarDrawerToggle;
@@ -62,11 +62,13 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     private TextView nowWfDescTv;//当前天气描述
     private TextView nowWfAqiTv;//当前天气aqi
     private TextView nowWfTmp;//当前温度
+    private TextView updateTime;//更新时间
     private ViewPager wfPager;
     private NeoApplication neoApplication;
     private boolean networkOk = false;//网络状态标志位
-    private ImageView locationIcon;
-    private Map<String,WeatherInfo> weatherInfoMap = new HashMap();
+    private ImageView locationIcon;//位置图标 只有本地定位的城市显示
+    private Map<String,WeatherInfo> weatherInfoMap;
+    private List<WeatherInfo> weatherInfoList;
     private WeatherInfoFragmentAdapter weatherInfoFragmentAdapter;
     private List<WeatherInfoFragment> weatherFragments;
 
@@ -86,13 +88,36 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        weatherInfoMap = new HashMap<>();
+        weatherInfoList = new ArrayList<>();
         initView();
-        checkNetwork();
         getCitiesFormSp();
+        getWeatherInfoFromSp();
+        checkNetwork();
         getCityNameFromLocation();
     }
 
+    /**
+     * 从ShraedPreference中获取城市
+     */
+    private void getCitiesFormSp(){
+        myCities = new ArrayList<>();
+        myCities = SharedPreferenceHelper.getMyCities(this);
+    }
 
+    /**
+     * 从Sp中获取weatherinfo
+     */
+    private void getWeatherInfoFromSp(){
+        weatherInfoMap = SharedPreferenceHelper.getWeatherInfoMap(MainActivity.this,myCities);
+        weatherInfoList = SharedPreferenceHelper.getWeatherInfoList(MainActivity.this,myCities);
+        setTitleInfo(weatherInfoList.get(0));
+        for (WeatherInfo w : weatherInfoList){
+            WeatherInfoFragment wf = new WeatherInfoFragment(this,w);
+            weatherFragments.add(wf);
+            weatherInfoFragmentAdapter.notifyDataSetChanged();
+        }
+    }
     /**
      *获取位置信息 通过位置信息查询城市
      * 此方法以后需要加上权限判断、错误提示等；
@@ -112,14 +137,10 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                         JSONObject jo = new JSONObject(response);
                         localCity =jo.getJSONObject("result").getJSONObject("addressComponent").getString("city");
                         localCity = StringUtils.cutCityWord(localCity);
-                        compareCity();
-                        weatherInfoMap = SharedPreferenceHelper.getWeatherInfos(MainActivity.this,myCities);
                         WeatherInfo w = weatherInfoMap.get(localCity);
                         if(w == null || needUpdate(w)){
                             getWeatherInfoFromNet(w.getCityName());
                         }
-                        NeoApplication.instance.setWeatherInfos(weatherInfoMap);
-
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -134,27 +155,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         }
     }
 
-
-    /**
-     * 从ShraedPreference中获取城市
-     */
-    private void getCitiesFormSp(){
-        myCities = new ArrayList<>();
-        myCities = SharedPreferenceHelper.getMyCities(this);
-//        currentCity = myCities.get(0);//第一个城市为默认城市
-    }
-
-
-    /**
-     * 比较位置获取的城市于SP中获取到的城市
-     */
-    private void compareCity(){
-        if(!myCities.contains(localCity)){
-            myCities.add(localCity);
-        }
-        SharedPreferenceHelper.saveMyCities(MainActivity.this,myCities);
-        NeoApplication.instance.setMyCities(myCities);
-    }
 
 
 
@@ -172,6 +172,10 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
     }
 
+    /**
+     * @param cityName
+     * 从网络获取城市天气
+     */
     private void getWeatherInfoFromNet(String cityName){
         String url = StringUtils.getWeatherUrl(cityName);
         HttpUtil.sendHttpRequest(url, new HttpCallbackListener() {
@@ -180,12 +184,11 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                 try {
                     JSONObject jo = new JSONObject(response);
                     final WeatherInfo weatherInfo = WeatherInfo.parses(jo);
-                    weatherInfoMap.put(weatherInfo.getCityName(),weatherInfo);
                     SharedPreferenceHelper.saveWeatherInfo(MainActivity.this,weatherInfo);
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            addWeather(weatherInfo);
+                            addWeatherInfo(weatherInfo);
                         }
                     });
                 } catch (JSONException e) {
@@ -221,6 +224,75 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         return false;
     }
 
+    /**
+     * 添加天气信息
+     */
+    private void addWeatherInfo(WeatherInfo w){
+        weatherInfoList.add(w);
+        weatherInfoMap.put(w.getCityName(),w);
+        myCities.add(w.getCityName());
+        WeatherInfoFragment wf = new WeatherInfoFragment(this,w);
+        weatherFragments.add(wf);
+        weatherInfoFragmentAdapter.notifyDataSetChanged();
+        wfPager.setCurrentItem(weatherFragments.size()-1);//将页面跳转到最后添加的
+        setTitleInfo(w);
+
+    }
+    /**
+     * 更新天气信息
+     */
+    private void updateWeatherInfo(WeatherInfo w){
+        for(int i = 0;i<weatherInfoList.size();i++){
+            if(weatherInfoList.get(i).getCityName().equals(w.getCityName())){
+                weatherInfoList.set(i,w);//替换
+                WeatherInfoFragment wf = new WeatherInfoFragment(this,w);
+                weatherFragments.set(i,wf);
+                break;
+            }
+        }
+        weatherInfoMap.put(w.getCityName(),w);
+        weatherInfoFragmentAdapter.notifyDataSetChanged();
+    }
+    /**
+     * 删除天气信息
+     */
+    private void deleteWeatherInfo(String cityName){
+        if(myCities.contains(cityName)){
+            myCities.remove(cityName);
+            weatherInfoMap.remove(cityName);
+            for(int n = 0;n<weatherInfoList.size();n++){
+                if(cityName.equals(weatherInfoList.get(n).getCityName())){
+                    if(n==0&&weatherInfoList.size()>1){
+                        //删除第一个时需要手动改变标题栏
+                        setTitleInfo(weatherInfoList.get(1));
+                    }
+                    weatherInfoList.remove(n);
+                    weatherFragments.remove(n);
+                    weatherInfoFragmentAdapter.notifyDataSetChanged();
+                }
+            }
+        }
+    }
+
+
+    /**
+     * 设置标题栏的信息
+     */
+    private void setTitleInfo(WeatherInfo weather){
+        // toolbar.setTitle(weather.getCityName());
+        //使用CollapsingToolbarLayout必须把title设置到CollapsingToolbarLayout上，设置到Toolbar上则不会显示
+        mCollapsingToolbarLayout.setTitle(weather.getCityName());
+        nowWfDescTv.setText(weather.getNowForecast().getWeatherDESC());
+        nowWfAqiTv.setText("AQI"+" "+weather.getAqi()+"("+weather.getQlty()+")");
+        nowWfTmp.setText(weather.getNowForecast().getTemperature()+"℃");
+        if(localCity.equals(weather.getCityName())){
+            locationIcon.setVisibility(View.VISIBLE);
+        }else {
+            locationIcon.setVisibility(View.GONE);
+        }
+        updateTime.setText("更新于："+weather.getUpdateTime());
+    }
+
 
     private void initView(){
         toolbar = (Toolbar) findViewById(R.id.tool_bar);
@@ -232,6 +304,8 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
                     case R.id.add_city:
                         Toast.makeText(MainActivity.this,"add",Toast.LENGTH_SHORT).show();
                         Intent intent = new Intent(MainActivity.this,CityManagerActivity.class);
+                        intent.putExtra(CITIES_FLAG,(Serializable) myCities);
+                        intent.putExtra(WEATHER_FLAG,(Serializable) weatherInfoList);
                         startActivityForResult(intent,RequestCode);
                 }
                 return false;
@@ -265,6 +339,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
         nowWfAqiTv = (TextView) findViewById(R.id.now_wf_aqi);
         nowWfTmp = (TextView) findViewById(R.id.now_wf_tmp);
         locationIcon = (ImageView) findViewById(R.id.location_icon);
+        updateTime = (TextView) findViewById(R.id.update_time);
 
         wfPager = (ViewPager) findViewById(R.id.weather_info_pager);
         weatherFragments = new ArrayList<>();
@@ -279,7 +354,7 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
             @Override
             public void onPageSelected(int position) {
-                setTitleInfo((WeatherInfo) mapTransitionList(weatherInfoMap).get(position));
+                setTitleInfo(weatherInfoList.get(position));
             }
 
             @Override
@@ -290,39 +365,6 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
 
     }
 
-    private void addWeather(WeatherInfo w){
-        WeatherInfoFragment wf = new WeatherInfoFragment(this,w);
-        weatherFragments.add(wf);
-        weatherInfoFragmentAdapter.notifyDataSetChanged();
-
-    }
-
-    public static List mapTransitionList(Map map) {
-        List list = new ArrayList();
-        Iterator iter = map.entrySet().iterator();  //获得map的Iterator
-        while(iter.hasNext()) {
-            Map.Entry entry = (Map.Entry)iter.next();
-            list.add(entry.getValue());
-        }
-        return list;
-    }
-
-    /**
-     * 设置标题栏的信息
-     */
-    private void setTitleInfo(WeatherInfo weather){
-        // toolbar.setTitle(weather.getCityName());
-        //使用CollapsingToolbarLayout必须把title设置到CollapsingToolbarLayout上，设置到Toolbar上则不会显示
-        mCollapsingToolbarLayout.setTitle(weather.getCityName());
-        nowWfDescTv.setText(weather.getNowForecast().getWeatherDESC());
-        nowWfAqiTv.setText("AQI"+" "+weather.getAqi()+"("+weather.getQlty()+")");
-        nowWfTmp.setText(weather.getNowForecast().getSendiblTemperature()+"℃");
-        if(localCity.equals(weather.getCityName())){
-            locationIcon.setVisibility(View.VISIBLE);
-        }else {
-            locationIcon.setVisibility(View.GONE);
-        }
-    }
 
 
 
@@ -330,13 +372,20 @@ public class MainActivity extends BaseActivity implements NavigationView.OnNavig
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == RequestCode && resultCode == RESULT_OK){
-            List<WeatherInfo> addWeatherInfos = NeoApplication.instance.getAddWeatherInfos();
-            for (WeatherInfo w : addWeatherInfos){
-                addWeather(w);
-                weatherInfoMap.put(w.getCityName(),w);
+            List<WeatherInfo> addWeatherInfos = (List<WeatherInfo>)
+                    data.getSerializableExtra(CityManagerActivity.ADD_WEATHER_FLAG);
+            if(addWeatherInfos!=null){
+                for (WeatherInfo w : addWeatherInfos){
+                    addWeatherInfo(w);
+                }
             }
-
-
+            List<String> deletedNames = (List<String>)
+                    data.getSerializableExtra(CityManagerActivity.DEL_NAME_FLAG);
+            if(deletedNames != null){
+                for(String name : deletedNames){
+                    deleteWeatherInfo(name);
+                }
+            }
         }
     }
 

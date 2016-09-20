@@ -7,12 +7,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 
-public class WeatherInfo {
+public class WeatherInfo implements Serializable {
     private String cityName;
     private String cityId;
     private String aqi;//空气质量指数

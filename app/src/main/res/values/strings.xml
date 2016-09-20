@@ -16,5 +16,7 @@
     <string name="city_manager">城市管理</string>
     <string name="input_city_name">请输入城市名称或拼音</string>
     <string name="no_matched_city">没有符合条件的城市</string>
-
+    <string name="delete_city">删除城市</string>
+    <string name="confirm">确定</string>
+    <string name="cancel">取消</string>
 </resources>

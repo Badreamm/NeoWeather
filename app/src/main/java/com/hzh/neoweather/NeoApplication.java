@@ -20,10 +20,6 @@ public class NeoApplication extends Application {
     public static final int NETTYPE_CMNET = 0x03;
     public static NeoApplication instance;
 
-    private Map<String,WeatherInfo> weatherInfos = new HashMap();
-    private List<String> myCities = new ArrayList<>();
-    private List<WeatherInfo> addWeatherInfos = new ArrayList<>();
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -78,27 +74,4 @@ public class NeoApplication extends Application {
         return netType;
     }
 
-    public Map<String, WeatherInfo> getWeatherInfos() {
-        return weatherInfos;
-    }
-
-    public void setWeatherInfos(Map<String, WeatherInfo> weatherInfos) {
-        this.weatherInfos = weatherInfos;
-    }
-
-    public List<String> getMyCities() {
-        return myCities;
-    }
-
-    public void setMyCities(List<String> myCities) {
-        this.myCities = myCities;
-    }
-
-    public List<WeatherInfo> getAddWeatherInfos() {
-        return addWeatherInfos;
-    }
-
-    public void setAddWeatherInfos(List<WeatherInfo> addWeatherInfos) {
-        this.addWeatherInfos = addWeatherInfos;
-    }
 }
